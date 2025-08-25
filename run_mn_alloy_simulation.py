@@ -3,15 +3,16 @@ Example script to run the Conceptual Mn Alloy Process Simulation
 """
 
 from conceptual_mn_alloy_process_simulation import ManganesReductionSimulator, ProcessParameters
+from io_utils import load_stage_inputs
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def run_example_simulation():
-    """Run an example simulation with typical manganese ore composition"""
-    
+def run_example_simulation(input_path: str = "stage_inputs.xlsx"):
+    """Run an example simulation using spreadsheet-defined compositions."""
+
     print("=== EXAMPLE MN ALLOY PROCESS SIMULATION ===\n")
-    
+
     # Define process parameters using user's validated conditions
     params = ProcessParameters(
         temperature_stage1=1173.0,      # K (900°C) - User's validated range 900-1000°C
@@ -21,25 +22,20 @@ def run_example_simulation():
         residence_time=2.0,             # 2 seconds as specified
         al_content=0.15                 # 15% Al in metal bath
     )
-    
+
     # Create simulator
     simulator = ManganesReductionSimulator(params)
-    
+
     # Load DNN model if available (optional)
     model_loaded = simulator.load_stage2_dnn_model('dnn_model.pkl')
     if not model_loaded:
         print("Using simplified kinetic model for Stage 2\n")
-    
-    # Define initial manganese ore composition (typical high-grade ore)
-    initial_ore_composition = {
-        'MnO2': 100.0,   # kg - Primary manganese oxide
-        'Mn2O3': 30.0,   # kg - Secondary oxide
-        'Mn3O4': 10.0,   # kg - Intermediate oxide
-        'MnO': 5.0,      # kg - Target oxide
-        'H2': 50.0,      # kg - Excess hydrogen
-        'H2O': 0.0       # kg - Initial water content
-    }
-    
+
+    # Load initial compositions from spreadsheet
+    stage_inputs = load_stage_inputs(input_path)
+    initial_ore_composition = stage_inputs.get('stage1', {})
+    metal_bath_composition = stage_inputs.get('stage2', {})
+
     print("Initial Ore Composition:")
     for species, mass in initial_ore_composition.items():
         print(f"  {species}: {mass:.1f} kg")
@@ -75,20 +71,11 @@ def run_example_simulation():
         'MnO2': stage1_results['MnO2'].iloc[-1],
         'Mn2O3': stage1_results['Mn2O3'].iloc[-1]
     }
-    
-    # Define metal bath composition
-    metal_bath_composition = {
-        'Al': 20.0,      # kg - Aluminum for reduction
-        'Fe': 80.0,      # kg - Iron base
-        'Si': 8.0,       # kg - Silicon content
-        'Mn': 5.0,       # kg - Existing manganese
-        'C': 2.0         # kg - Carbon content
-    }
-    
+
     print(f"\nMetal Bath Composition:")
     for species, mass in metal_bath_composition.items():
         print(f"  {species}: {mass:.1f} kg")
-    
+
     # Run Stage 2: Al Reduction
     print(f"\nRunning Stage 2: Al Reduction of MnO...")
     stage2_results = simulator.run_stage2_simulation(
