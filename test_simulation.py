@@ -180,6 +180,35 @@ def test_full_process():
         traceback.print_exc()
         return False
 
+def test_parameter_study():
+    """Test the parameter study helper."""
+    print("\nTesting parameter study...")
+    try:
+        from conceptual_mn_alloy_process_simulation import ProcessParameters
+        from parameter_study import parameter_study, plot_recovery_vs_temperature, plot_recovery_vs_al_content
+        import matplotlib
+
+        # Use non-interactive backend for tests
+        matplotlib.use("Agg")
+
+        params_list = [
+            ProcessParameters(temperature_stage1=1100.0, al_content=0.10),
+            ProcessParameters(temperature_stage1=1200.0, al_content=0.20),
+        ]
+
+        results_df = parameter_study(params_list)
+        print(f"✓ Parameter study produced DataFrame with {len(results_df)} rows")
+
+        # Basic plotting calls to ensure functions execute
+        plot_recovery_vs_temperature(results_df)
+        plot_recovery_vs_al_content(results_df)
+
+        return True
+    except Exception as e:
+        print(f"✗ Parameter study test failed: {e}")
+        traceback.print_exc()
+        return False
+
 def main():
     """Run all tests"""
     print("=== CONCEPTUAL MN ALLOY PROCESS SIMULATION TESTS ===\n")
@@ -196,8 +225,9 @@ def main():
     
     stage2_success, _ = test_stage2_simulation()
     test_results.append(("Stage 2 Simulation", stage2_success))
-    
+
     test_results.append(("Complete Process", test_full_process()))
+    test_results.append(("Parameter Study", test_parameter_study()))
     
     # Summary
     print(f"\n=== TEST SUMMARY ===")
